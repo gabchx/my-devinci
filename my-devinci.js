@@ -142,7 +142,11 @@ function main() {
       let info = await transporter.sendMail({
         from: '"MyApi" <myapi@icloud.com>', // sender address
         to: 'gabriel.chaiix@gmail.com', // list of receivers
-        subject: 'Appel - MyDevinci', // Subject line
+        subject:
+          'Appel - ' +
+          openCallInfo.nom +
+          ' | ' +
+          openCallInfo.horaire.split('-')[0], // Subject line
         text: '', // plain text body
         html: timecode + '\t:\t' + JSON.stringify(res), // html body
       });
