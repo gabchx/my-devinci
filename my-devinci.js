@@ -144,7 +144,7 @@ function main() {
         to: 'gabriel.chaiix@gmail.com', // list of receivers
         subject: 'Appel - MyDevinci', // Subject line
         text: '', // plain text body
-        html: timecode + '\t:\t' + res, // html body
+        html: timecode + '\t:\t' + JSON.stringify(res), // html body
       });
       openCallInfo = null;
       emailcheck = false;
