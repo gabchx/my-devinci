@@ -118,7 +118,7 @@ function main() {
       dn.getHours() + ':' + dn.getMinutes() + ':' + dn.getSeconds() + '  ';
 
     let openCallInfo = await getOpenCallInfo(token);
-    if (openCallInfo.includes("token-error")) {
+    if (typeof openCallInfo === 'string' && openCallInfo.includes("token-error")) {
       //probleme de token
       if (!emailcheck) {
         let info = await transporter.sendMail({
