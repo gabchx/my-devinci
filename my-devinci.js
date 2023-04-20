@@ -37,7 +37,7 @@ getConnexionToken = async () => {
 readConnexionToken = async () => {
   try {
     const token = await fs.readFileSync('token.txt', 'utf8');
-    return token;
+    return token.replace(/\\n/g, '');
   } catch (error) {
     return error;
   }
@@ -70,7 +70,7 @@ getOpenCallInfo = async (authToken) => {
     }
     return { seance_id: null, nom: null, horaire: null };
   } catch (error) {
-    return 'token-error';
+    return 'token-error : '+error;
   }
 };
 
@@ -118,7 +118,7 @@ function main() {
       dn.getHours() + ':' + dn.getMinutes() + ':' + dn.getSeconds() + '  ';
 
     let openCallInfo = await getOpenCallInfo(token);
-    if (openCallInfo == 'token-error') {
+    if (openCallInfo.includes("token-error")) {
       //probleme de token
       if (!emailcheck) {
         let info = await transporter.sendMail({
