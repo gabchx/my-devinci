@@ -1,5 +1,6 @@
+//const data = require('./data.json')
+//const FileCookieStore = require('tough-cookie-filestore2')
 require('dotenv').config();
-console.log(process.env);
 const axios = require('axios');
 const fs = require('fs');
 const FormData = require('form-data');
@@ -52,7 +53,7 @@ getOpenCallInfo = async (authToken) => {
     }
     return { seance_id: null, nom: null, horaire: null };
   } catch (error) {
-    return 'token-error : ' + error;
+    return 'token-error';
   }
 };
 
@@ -101,12 +102,19 @@ function main() {
       dn.getHours() + ':' + dn.getMinutes() + ':' + dn.getSeconds() + '  ';
 
     let openCallInfo = await getOpenCallInfo(token);
-    if (
-      typeof openCallInfo === 'string' &&
-      openCallInfo.includes('token-error')
-    ) {
-      //probleme de token
-      if (!emailcheck) {
+
+    if (openCallInfo == 'token-error') {
+      token = await getConnexionToken();
+      if (emailcheck == 0) {
+        let info = await transporter.sendMail({
+          from: '"MyApi" <myapi@icloud.com>', // sender address
+          to: 'gabriel.chaiix@gmail.com', // list of receivers
+          subject: 'Token Refresh - MyDevinci', // Subject line
+          text: '', // plain text body
+          html: '<b>Token refresh Hypernuc</b>' + openCallInfo, // html body
+        });
+      }
+      if (emailcheck >= 3) {
         let info = await transporter.sendMail({
           from: '"MyApi" <myapi@icloud.com>', // sender address
           to: 'gabriel.chaiix@gmail.com', // list of receivers
