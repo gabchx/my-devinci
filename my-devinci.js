@@ -1,49 +1,31 @@
-//const data = require('./data.json')
-//const FileCookieStore = require('tough-cookie-filestore2')
+require('dotenv').config();
+console.log(process.env);
 const axios = require('axios');
+const fs = require('fs');
 const FormData = require('form-data');
+const DevinciAuth = require('./devinciauth.js');
 const ExceptionController = require('./exceptionController.js');
 const nodemailer = require('nodemailer');
-const fs = require('fs');
 
-let emailcheck = false;
+const devinci_email = process.env.DEVINCI_EMAIL;
+const devinci_password = process.env.DEVINCI_PASSWORD;
+const icloud_user = process.env.ICLOUD_USER;
+const icloud_password = process.env.ICLOUD_PASSWORD;
+
+let emailcheck = 0;
+token = '';
 
 getConnexionToken = async () => {
   try {
-    const response = await axios({
-      url: endpoint + '/o/token',
-      method: 'post',
-      headers: {
-        Accept: '*/*',
-        'Content-Type': 'multipart/form-data',
-        'Accept-Encoding': 'gzip, deflate, br',
-        Connection: 'keep-alive',
-      },
-      data: {
-        grant_type: 'password',
-        client_id: 'public',
-        username: username,
-        password: password,
-      },
-    });
-    const { data } = response;
-    const token = data.token_type + ' ' + data.access_token;
+    const devinciAuth = new DevinciAuth(devinci_email, devinci_password);
+    await devinciAuth.init();
+    let token = await devinciAuth.getToken();
     return token;
   } catch (error) {
     return error;
   }
 };
 
-readConnexionToken = async () => {
-  try {
-    const token = await fs.readFileSync('token.txt', 'utf8');
-    return token;
-  } catch (error) {
-    return error;
-  }
-};
-
-//Ajouter la recuperation du token de refreshing
 getOpenCallInfo = async (authToken) => {
   try {
     const response = await axios({
@@ -104,12 +86,13 @@ function main() {
     //ExceptionController.addToFile(newElement);
     //ExceptionController.removePassedEvents();
 
-    let token = await readConnexionToken(); //await getConnexionToken()
+    //let token = await readConnexionToken(); //await getConnexionToken()
+
     let transporter = nodemailer.createTransport({
       service: 'iCloud',
       auth: {
-        user: 'iixgriimzz', // generated ethereal user
-        pass: 'xlld-janf-elnv-egwl', // generated ethereal password
+        user: icloud_user, // generated ethereal user
+        pass: icloud_password, // generated ethereal password
       },
     });
 
@@ -118,19 +101,33 @@ function main() {
       dn.getHours() + ':' + dn.getMinutes() + ':' + dn.getSeconds() + '  ';
 
     let openCallInfo = await getOpenCallInfo(token);
+
     if (openCallInfo == 'token-error') {
-      //probleme de token
-      if (!emailcheck) {
+      token = await getConnexionToken();
+      if (emailcheck == 0) {
         let info = await transporter.sendMail({
           from: '"MyApi" <myapi@icloud.com>', // sender address
           to: 'gabriel.chaiix@gmail.com', // list of receivers
-          subject: 'Token - MyDevinci', // Subject line
+          subject: 'Token Refresh - MyDevinci', // Subject line
           text: '', // plain text body
-          html: '<b>Need a new token\nProxyman -> Hypernuc</b>' + openCallInfo, // html body
+          html: '<b>Token refresh Hypernuc</b>' + openCallInfo, // html body
+        });
+      }
+      if (emailcheck >= 3) {
+        let info = await transporter.sendMail({
+          from: '"MyApi" <myapi@icloud.com>', // sender address
+          to: 'gabriel.chaiix@gmail.com', // list of receivers
+          subject: 'Token Error - MyDevinci', // Subject line
+          text: '', // plain text body
+          html:
+            '<b>Token error : Proxyman -> Hypernuc</b>' +
+            openCallInfo +
+            '\n' +
+            token, // html body
         });
       }
       console.log(timecode + '\t:\t' + openCallInfo);
-      emailcheck = true;
+      emailcheck += 1;
     } else if (
       //remplissage de l'appel ouvert
       !ExceptionController.checkIfExists(openCallInfo) &&
@@ -142,16 +139,12 @@ function main() {
       let info = await transporter.sendMail({
         from: '"MyApi" <myapi@icloud.com>', // sender address
         to: 'gabriel.chaiix@gmail.com', // list of receivers
-        subject:
-          'Appel - ' +
-          openCallInfo.nom +
-          ' | ' +
-          openCallInfo.horaire.split('-')[0], // Subject line
+        subject: 'Appel - MyDevinci', // Subject line
         text: '', // plain text body
-        html: timecode + '\t:\t' + JSON.stringify(res), // html body
+        html: timecode + '\t:\t' + res, // html body
       });
       openCallInfo = null;
-      emailcheck = false;
+      emailcheck = 0;
     } else {
       //pas d'appel ouvert
       console.log(timecode + '\t:\t' + "Pas d'appel ouvert");
