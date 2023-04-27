@@ -52,7 +52,7 @@ getOpenCallInfo = async (authToken) => {
     }
     return { seance_id: null, nom: null, horaire: null };
   } catch (error) {
-    return 'token-error';
+    return 'token-error : ' + error;
   }
 };
 
@@ -101,19 +101,12 @@ function main() {
       dn.getHours() + ':' + dn.getMinutes() + ':' + dn.getSeconds() + '  ';
 
     let openCallInfo = await getOpenCallInfo(token);
-
-    if (openCallInfo == 'token-error') {
-      token = await getConnexionToken();
-      if (emailcheck == 0) {
-        let info = await transporter.sendMail({
-          from: '"MyApi" <myapi@icloud.com>', // sender address
-          to: 'gabriel.chaiix@gmail.com', // list of receivers
-          subject: 'Token Refresh - MyDevinci', // Subject line
-          text: '', // plain text body
-          html: '<b>Token refresh Hypernuc</b>' + openCallInfo, // html body
-        });
-      }
-      if (emailcheck >= 3) {
+    if (
+      typeof openCallInfo === 'string' &&
+      openCallInfo.includes('token-error')
+    ) {
+      //probleme de token
+      if (!emailcheck) {
         let info = await transporter.sendMail({
           from: '"MyApi" <myapi@icloud.com>', // sender address
           to: 'gabriel.chaiix@gmail.com', // list of receivers
